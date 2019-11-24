@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/graphql-go/graphql"
+	"github.com/pkg/errors"
 	"google.golang.org/appengine"
 )
 
@@ -14,16 +18,17 @@ func init() {
 	schema, _ = graphql.NewSchema(graphql.SchemaConfig{
 		Mutation: rootMutation,
 	})
-	http.HandleFunc("/", entryPointHandler)
 }
 
 // entryPointHandler
-func entryPointHandler(w http.ResponseWriter, r *http.Request) {
+func graphQLServerHomeHandler(w http.ResponseWriter, r *http.Request) {
+	// dataHomePage := "Endpoint: homepage"
+	// io.WriteString(w, dataHomePage)
 	ctx := appengine.NewContext(r)
 
 	body, err := ioutil.ReadAll(r.Body) // Read the query
 	if err != nil {
-		responseError(w, "Invalid request bpdy", http.StatusBadRequest)
+		responseError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -65,5 +70,20 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare graphQL
 	},
 })
 
+// custom404PageHandler defines custom 404 page
+func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")        // set the content header type
+	w.WriteHeader(http.StatusNotFound)                 // this automatically generates a 404 status code
+	data404Page := "This page does not exist ... 404!" // page content
+	io.WriteString(w, data404Page)
+}
+
 func main() {
+	muxRouter := mux.NewRouter().StrictSlash(true)                     // instantiate the gorillamux Router and enforce trailing slash rule i.e. `/path` === `/path/`
+	muxRouter.NotFoundHandler = http.HandlerFunc(custom404PageHandler) // customer 404 Page handler scenario
+	muxRouter.HandleFunc("/", graphQLServerHomeHandler)
+	fmt.Println("GraphQL Server is up and running at http://127.0.0.1:8080")
+	for {
+		log.Fatal(errors.Wrap(http.ListenAndServe(":8080", muxRouter), "Failed to start GraphQL Server"))
+	}
 }
