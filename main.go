@@ -18,8 +18,9 @@ import (
 // Globally initialized Gorilla Mux router
 var muxRouter = mux.NewRouter().StrictSlash(true) // instantiate the gorillamux Router and enforce trailing slash rule i.e. `/path` === `/path/`
 
-// User type and root mutation
-var schema graphql.Schema // declare GraphQL schema type
+// Global declaration of schema and err
+var schema graphql.Schema // declare GraphQL schema to allow access in other functions
+var err error             // declare global error variable
 
 var userType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL userType
 	Name: "User",
@@ -49,7 +50,7 @@ func init() {
 	schemaConfig := graphql.SchemaConfig{
 		Mutation: rootMutation,
 	}
-	schema, err := graphql.NewSchema(schemaConfig)
+	schema, err = graphql.NewSchema(schemaConfig)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Failed to create a new schema"))
 	}
