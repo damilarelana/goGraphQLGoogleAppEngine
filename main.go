@@ -7,49 +7,21 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/damilarelana/goGraphQLGoogleAppEngine/middleware"
+	"github.com/damilarelana/goGraphQLGoogleAppEngine/resolvers"
 	"github.com/gorilla/mux"
 	"github.com/graphql-go/graphql"
 	"github.com/pkg/errors"
 	"google.golang.org/appengine"
 )
 
-// Entry point for the Google cloud engine
-func init() {
-	schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Mutation: rootMutation,
-	})
-}
-
-// entryPointHandler
-func graphQLServerHomeHandler(w http.ResponseWriter, r *http.Request) {
-	// dataHomePage := "Endpoint: homepage"
-	// io.WriteString(w, dataHomePage)
-	ctx := appengine.NewContext(r)
-
-	body, err := ioutil.ReadAll(r.Body) // Read the query
-	if err != nil {
-		responseError(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	resp := graphql.Do(graphql.Params{ // execute the GraphQL request
-		Schema:        schema,
-		RequestString: string(body),
-		Context:       ctx,
-	})
-
-	if len(resp.Errors) > 0 { // check for response errors
-		responseError(w, fmt.Sprintf("%+v", resp.Errors), http.StatusBadRequest)
-		return
-	}
-
-	responseJSON(w, resp) // return the query result
-}
+// Globally initialized Gorilla Mux router
+var muxRouter = mux.NewRouter().StrictSlash(true) // instantiate the gorillamux Router and enforce trailing slash rule i.e. `/path` === `/path/`
 
 // User type and root mutation
-var schema graphql.Schema // declare graphQL schema type
+var schema graphql.Schema // declare GraphQL schema type
 
-var userType = graphql.NewObject(graphql.ObjectConfig{ // declare graphQL userType
+var userType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL userType
 	Name: "User",
 	Fields: graphql.Fields{
 		"id":   &graphql.Field{Type: graphql.String},
@@ -57,18 +29,61 @@ var userType = graphql.NewObject(graphql.ObjectConfig{ // declare graphQL userTy
 	},
 })
 
-var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare graphQL
-	Name: "RootMutation",
-	Fields: graphql.Fields{
-		"createUser": &graphql.Field{
-			Type: userType,
-			Args: graphql.FieldConfigArgument{
-				"name": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
-			},
-			Resolve: createUser,
+var fields = graphql.Fields{ // declare GraphQL fields
+	"createUser": &graphql.Field{
+		Type: userType,
+		Args: graphql.FieldConfigArgument{
+			"name": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 		},
+		Resolve: resolvers.CreateUser, // call the resolver `createUser`
 	},
+}
+
+var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL mutation
+	Name:   "RootMutation",
+	Fields: fields,
 })
+
+// init builds the schema and maps it to an endpoint handler
+func init() {
+	schemaConfig := graphql.SchemaConfig{
+		Mutation: rootMutation,
+	}
+	schema, err := graphql.NewSchema(schemaConfig)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "Failed to create a new schema"))
+	}
+	muxRouter.HandleFunc("/", graphQLServerHomeHandler)
+}
+
+// graphQLServerHomeHandler and entry point for Google App Engine
+func graphQLServerHomeHandler(w http.ResponseWriter, r *http.Request) {
+	dataHomePage := "GraphQL Endpoint: homepage"
+	io.WriteString(w, dataHomePage)
+
+	ctx := appengine.NewContext(r)
+
+	body, err := ioutil.ReadAll(r.Body) // Read the query
+	if err != nil {
+		middleware.ResponseError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	queryParams := graphql.Params{ // compose the GraphQL query parameters
+		Schema:        schema,
+		RequestString: string(body),
+		Context:       ctx,
+	}
+
+	resp := graphql.Do(queryParams) // execute the GraphQL request
+
+	if len(resp.Errors) > 0 { // check for response errors
+		middleware.ResponseError(w, fmt.Sprintf("%+v", resp.Errors), http.StatusBadRequest)
+		return
+	}
+
+	middleware.ResponseJSON(w, resp) // return the query result
+}
 
 // custom404PageHandler defines custom 404 page
 func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,9 +94,7 @@ func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	muxRouter := mux.NewRouter().StrictSlash(true)                     // instantiate the gorillamux Router and enforce trailing slash rule i.e. `/path` === `/path/`
 	muxRouter.NotFoundHandler = http.HandlerFunc(custom404PageHandler) // customer 404 Page handler scenario
-	muxRouter.HandleFunc("/", graphQLServerHomeHandler)
 	fmt.Println("GraphQL Server is up and running at http://127.0.0.1:8080")
 	for {
 		log.Fatal(errors.Wrap(http.ListenAndServe(":8080", muxRouter), "Failed to start GraphQL Server"))
