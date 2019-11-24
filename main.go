@@ -25,8 +25,9 @@ var err error             // declare global error variable
 var userType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL userType
 	Name: "User",
 	Fields: graphql.Fields{
-		"id":   &graphql.Field{Type: graphql.String},
-		"name": &graphql.Field{Type: graphql.String},
+		"id":    &graphql.Field{Type: graphql.String},
+		"name":  &graphql.Field{Type: graphql.String},
+		"posts": makeListField(makeNodeListType("PostList", postType), resolvers.QueryPostsByUser),
 	},
 })
 
@@ -98,6 +99,16 @@ func makeNodeListType(name string, nodeType *graphql.Object) *graphql.Object {
 }
 
 var rootFields = graphql.Fields{ // declare query fields.
+	// queryUser field
+	"user": &graphql.Field{
+		Type: userType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: resolvers.QueryUser, // call the resolver `queryUser`
+	},
+
+	// queryPost field
 	"posts": makeListField(makeNodeListType("PostList", postType), resolvers.QueryPosts),
 }
 

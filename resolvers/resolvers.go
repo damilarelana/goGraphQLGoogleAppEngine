@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
@@ -81,4 +82,48 @@ func CreatePost(params graphql.ResolveParams) (interface{}, error) {
 	}
 	post.ID = strconv.FormatInt(generatedKey.IntID(), 10)
 	return post, nil
+}
+
+// QueryUser function
+func QueryUser(params graphql.ResolveParams) (interface{}, error) {
+	ctx := params.Context
+
+	strID, ok := params.Args["id"].(string)
+	if ok {
+		id, err := strconv.ParseInt(strID, 10, 64) // Parse ID argument
+		if err != nil {
+			return nil, errors.New("Invalid id")
+		}
+		user := &m.User{ID: strID}
+		key := datastore.NewKey(ctx, "User", "", id, nil)
+
+		err = datastore.Get(ctx, key, user) // Fetch user by ID
+		if err != nil {
+			return nil, errors.New("User not found")
+		}
+		return user, nil
+	}
+	return m.User{}, nil
+}
+
+// QueryPostsByUser function
+func QueryPostsByUser(params graphql.ResolveParams) (interface{}, error) {
+	ctx := params.Context
+	query := datastore.NewQuery("Post")
+
+	limit, ok := params.Args["limit"].(int)
+	if ok {
+		query = query.Limit(limit)
+	}
+	offset, ok := params.Args["offset"].(int)
+	if ok {
+		query = query.Offset(offset)
+	}
+
+	// check user's ID against post's UserID field
+	user, ok := params.Source.(*m.User)
+	if ok {
+		query = query.Filter("UserID =", user.ID)
+	}
+	return queryPostList(ctx, query)
 }
