@@ -73,6 +73,7 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare rootMutati
 //
 // Query
 //
+// makeListField function
 func makeListField(listType graphql.Output, resolve graphql.FieldResolveFn) *graphql.Field {
 	return &graphql.Field{
 		Type:    listType,
@@ -84,6 +85,7 @@ func makeListField(listType graphql.Output, resolve graphql.FieldResolveFn) *gra
 	}
 }
 
+// makeNodeListType function
 func makeNodeListType(name string, nodeType *graphql.Object) *graphql.Object {
 	return graphql.NewObject(
 		graphql.ObjectConfig{
@@ -144,7 +146,7 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	middleware.ResponseJSON(w, resp) // return the query result
 }
 
-//
+// Server Home page handler
 func graphQLServerHomePageHandler(w http.ResponseWriter, r *http.Request) {
 	dataHomePage := "GraphQL Server: homepage"
 	io.WriteString(w, dataHomePage)
