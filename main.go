@@ -30,7 +30,22 @@ var userType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL userTy
 	},
 })
 
-var fields = graphql.Fields{ // declare GraphQL fields
+var postType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL postType
+	Name: "Post",
+	Fields: graphql.Fields{
+		"id":        &graphql.Field{Type: graphql.String},
+		"userID":    &graphql.Field{Type: graphql.String},
+		"createdAt": &graphql.Field{Type: graphql.DateTime},
+		"content":   &graphql.Field{Type: graphql.String},
+	},
+})
+
+//
+// Mutation
+//
+var mutationFields = graphql.Fields{ // declare mutation fields: for user, post etc.
+
+	// createUser fields
 	"createUser": &graphql.Field{
 		Type: userType,
 		Args: graphql.FieldConfigArgument{
@@ -38,17 +53,63 @@ var fields = graphql.Fields{ // declare GraphQL fields
 		},
 		Resolve: resolvers.CreateUser, // call the resolver `createUser`
 	},
+
+	// createPost fields
+	"createPost": &graphql.Field{
+		Type: postType,
+		Args: graphql.FieldConfigArgument{
+			"userID":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+			"content": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: resolvers.CreatePost, // call the resolver `createPost`
+	},
 }
 
-var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL mutation
+var rootMutation = graphql.NewObject(graphql.ObjectConfig{ // declare rootMutation
 	Name:   "RootMutation",
-	Fields: fields,
+	Fields: mutationFields,
 })
 
-// init builds the schema and maps it to an endpoint handler
+//
+// Query
+//
+func makeListField(listType graphql.Output, resolve graphql.FieldResolveFn) *graphql.Field {
+	return &graphql.Field{
+		Type:    listType,
+		Resolve: resolve,
+		Args: graphql.FieldConfigArgument{
+			"limit":  &graphql.ArgumentConfig{Type: graphql.Int},
+			"offset": &graphql.ArgumentConfig{Type: graphql.Int},
+		},
+	}
+}
+
+func makeNodeListType(name string, nodeType *graphql.Object) *graphql.Object {
+	return graphql.NewObject(
+		graphql.ObjectConfig{
+			Name: name,
+			Fields: graphql.Fields{
+				"nodes":      &graphql.Field{Type: graphql.NewList(nodeType)},
+				"totalCount": &graphql.Field{Type: graphql.Int},
+			},
+		})
+}
+
+var rootFields = graphql.Fields{ // declare query fields.
+	"posts": makeListField(makeNodeListType("PostList", postType), queryPosts),
+}
+
+var rootQuery = graphql.NewObject(graphql.ObjectConfig{ // declare rootQuery
+	Name:   "RootQuery",
+	Fields: rootFields,
+})
+
+// Initialization
+// nit builds the schema and maps it to an endpoint handler
 func init() {
 	schemaConfig := graphql.SchemaConfig{
 		Mutation: rootMutation,
+		Query:    rootQuery,
 	}
 	schema, err = graphql.NewSchema(schemaConfig)
 	if err != nil {
