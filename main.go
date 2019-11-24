@@ -115,14 +115,11 @@ func init() {
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Failed to create a new schema"))
 	}
-	muxRouter.HandleFunc("/", graphQLServerHomeHandler)
+	muxRouter.HandleFunc("/graphql", graphQLHandler)
 }
 
 // graphQLServerHomeHandler and entry point for Google App Engine
-func graphQLServerHomeHandler(w http.ResponseWriter, r *http.Request) {
-	dataHomePage := "GraphQL Endpoint: homepage"
-	io.WriteString(w, dataHomePage)
-
+func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	body, err := ioutil.ReadAll(r.Body) // Read the query
@@ -147,6 +144,12 @@ func graphQLServerHomeHandler(w http.ResponseWriter, r *http.Request) {
 	middleware.ResponseJSON(w, resp) // return the query result
 }
 
+//
+func graphQLServerHomePageHandler(w http.ResponseWriter, r *http.Request) {
+	dataHomePage := "GraphQL Server: homepage"
+	io.WriteString(w, dataHomePage)
+}
+
 // custom404PageHandler defines custom 404 page
 func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")        // set the content header type
@@ -157,6 +160,7 @@ func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	muxRouter.NotFoundHandler = http.HandlerFunc(custom404PageHandler) // customer 404 Page handler scenario
+	muxRouter.HandleFunc("/", graphQLServerHomePageHandler)
 	fmt.Println("GraphQL Server is up and running at http://127.0.0.1:8080")
 	for {
 		log.Fatal(errors.Wrap(http.ListenAndServe(":8080", muxRouter), "Failed to start GraphQL Server"))
