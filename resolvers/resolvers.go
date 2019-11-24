@@ -31,7 +31,8 @@ func queryPostList(ctx context.Context, query *datastore.Query) (PostListResult,
 	return result, nil
 }
 
-func queryPosts(params graphql.ResolveParams) (interface{}, error) {
+// QueryPosts function
+func QueryPosts(params graphql.ResolveParams) (interface{}, error) {
 	ctx := params.Context
 	query := datastore.NewQuery("Post")
 	limit, ok := params.Args["limit"].(int)

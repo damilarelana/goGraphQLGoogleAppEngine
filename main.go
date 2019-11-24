@@ -96,7 +96,7 @@ func makeNodeListType(name string, nodeType *graphql.Object) *graphql.Object {
 }
 
 var rootFields = graphql.Fields{ // declare query fields.
-	"posts": makeListField(makeNodeListType("PostList", postType), queryPosts),
+	"posts": makeListField(makeNodeListType("PostList", postType), resolvers.QueryPosts),
 }
 
 var rootQuery = graphql.NewObject(graphql.ObjectConfig{ // declare rootQuery
