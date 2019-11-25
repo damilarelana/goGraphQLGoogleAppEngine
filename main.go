@@ -27,7 +27,7 @@ var userType = graphql.NewObject(graphql.ObjectConfig{ // declare GraphQL userTy
 	Fields: graphql.Fields{
 		"id":    &graphql.Field{Type: graphql.String},
 		"name":  &graphql.Field{Type: graphql.String},
-		"posts": makeListField(makeNodeListType("userPostList", postType), resolvers.QueryPostsByUser),
+		"posts": makeListField(makeNodeListType("userTypePostList", postType), resolvers.QueryPostsByUser),
 	},
 })
 
@@ -109,7 +109,7 @@ var rootFields = graphql.Fields{ // declare query fields.
 	},
 
 	// queryPost field
-	"posts": makeListField(makeNodeListType("queryPostList", postType), resolvers.QueryPosts),
+	"posts": makeListField(makeNodeListType("rootFieldPostList", postType), resolvers.QueryPosts),
 }
 
 var rootQuery = graphql.NewObject(graphql.ObjectConfig{ // declare rootQuery
