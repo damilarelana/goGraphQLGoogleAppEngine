@@ -149,6 +149,7 @@ func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		stringOutput = ""
 	}
+
 	queryParams := graphql.Params{ // compose the GraphQL query parameters
 		Schema:        schema,
 		RequestString: stringOutput,
