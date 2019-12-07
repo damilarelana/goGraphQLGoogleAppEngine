@@ -29,7 +29,7 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "fc4aabc6c91483155dade6fbb627cc953a723260"
+  revision = "e7e4b65ae66375ec1e85afc8e6b9b4933ae4da81"
 
 [[projects]]
   name = "google.golang.org/appengine"

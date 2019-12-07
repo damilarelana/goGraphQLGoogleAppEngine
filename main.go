@@ -183,7 +183,9 @@ func custom404PageHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	muxRouter.NotFoundHandler = http.HandlerFunc(custom404PageHandler) // customer 404 Page handler scenario
 	muxRouter.HandleFunc("/", graphQLServerHomePageHandler)
-	fmt.Println("GraphQL Server is up and running at http://127.0.0.1:8080")
+	http.Handle("/", muxRouter) // register the muxRouter with net package. Yes this handles all the routes
+	fmt.Println("GraphQL Server is running ... ")
+	appengine.Main()
 	for {
 		log.Fatal(errors.Wrap(http.ListenAndServe(":8080", muxRouter), "Failed to start GraphQL Server"))
 	}
