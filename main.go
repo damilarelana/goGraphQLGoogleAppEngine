@@ -134,16 +134,24 @@ func init() {
 // graphQLServerHomeHandler and entry point for Google App Engine
 func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
+	var stringOutput string
 
-	body, err := ioutil.ReadAll(r.Body) // Read the query via the request body
-	if err != nil {
-		middleware.ResponseError(w, "Invalid request body", http.StatusBadRequest)
-		return
+	switch r.Method {
+	case "POST":
+		body, err := ioutil.ReadAll(r.Body) // Read the query via the request body, assuming a POST request
+		if err != nil {
+			middleware.ResponseError(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		stringOutput = string(body)
+	case "GET":
+		stringOutput = r.URL.Query().Get("query")
+	default:
+		stringOutput = ""
 	}
-
 	queryParams := graphql.Params{ // compose the GraphQL query parameters
 		Schema:        schema,
-		RequestString: string(body),
+		RequestString: stringOutput,
 		Context:       ctx,
 	}
 
