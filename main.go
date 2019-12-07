@@ -109,7 +109,7 @@ var rootFields = graphql.Fields{ // declare query fields.
 	},
 
 	// queryPost field
-	"posts": makeListField(makeNodeListType("rootFieldPostList", postType), resolvers.QueryPosts),
+	"posts": makeListField(makeNodeListType("rootFieldsPostList", postType), resolvers.QueryPosts),
 }
 
 var rootQuery = graphql.NewObject(graphql.ObjectConfig{ // declare rootQuery
@@ -121,8 +121,8 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{ // declare rootQuery
 // nit builds the schema and maps it to an endpoint handler
 func init() {
 	schemaConfig := graphql.SchemaConfig{
-		Mutation: rootMutation,
 		Query:    rootQuery,
+		Mutation: rootMutation,
 	}
 	schema, err = graphql.NewSchema(schemaConfig)
 	if err != nil {
@@ -135,7 +135,7 @@ func init() {
 func graphQLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	body, err := ioutil.ReadAll(r.Body) // Read the query
+	body, err := ioutil.ReadAll(r.Body) // Read the query via the request body
 	if err != nil {
 		middleware.ResponseError(w, "Invalid request body", http.StatusBadRequest)
 		return
